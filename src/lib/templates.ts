@@ -11,6 +11,15 @@ export type Template = {
   previewImages: string[];
   demoUrl?: string;
   deliverables: string[];
+  requiresPayment: boolean;
+  delivery: {
+    format: "zip";
+    storedAt: "local-folder" | "s3-bucket";
+    downloadPath: string;
+    fileSize: string;
+    contents: string[];
+    notes?: string;
+  };
 };
 
 export const templates: Template[] = [
@@ -42,6 +51,19 @@ export const templates: Template[] = [
       "Configured appointment form",
       "SEO metadata templates",
     ],
+    requiresPayment: true,
+    delivery: {
+      format: "zip",
+      storedAt: "local-folder",
+      downloadPath: "/downloads/dental-studio.zip",
+      fileSize: "24.8 MB",
+      contents: [
+        "next-app/ – production-ready Next.js project",
+        "public/ – optimized hero and treatment imagery",
+        "docs/launch-checklist.md",
+      ],
+      notes: "Sample assets are bundled locally for the demo. Live checkouts upload to S3 for durability.",
+    },
   },
   {
     id: "artisan-roastery",
@@ -71,6 +93,19 @@ export const templates: Template[] = [
       "Newsletter form wiring",
       "Brand color presets",
     ],
+    requiresPayment: true,
+    delivery: {
+      format: "zip",
+      storedAt: "local-folder",
+      downloadPath: "/downloads/artisan-roastery.zip",
+      fileSize: "18.6 MB",
+      contents: [
+        "next-app/ – statically generated coffee shop site",
+        "content/ – seasonal menu JSON",
+        "docs/email-campaigns.md",
+      ],
+      notes: "Synced to S3 nightly once Stripe purchase completes.",
+    },
   },
   {
     id: "luminous-portfolio",
@@ -100,6 +135,19 @@ export const templates: Template[] = [
       "Blog listing and detail pages",
       "Inquiry automation checklist",
     ],
+    requiresPayment: true,
+    delivery: {
+      format: "zip",
+      storedAt: "local-folder",
+      downloadPath: "/downloads/luminous-portfolio.zip",
+      fileSize: "31.2 MB",
+      contents: [
+        "next-app/ – portfolio shell with CMS hooks",
+        "public/ – curated photography set",
+        "docs/post-processing-guide.md",
+      ],
+      notes: "Local folder mirrors the production bucket during development.",
+    },
   },
   {
     id: "modern-consultancy",
@@ -129,6 +177,19 @@ export const templates: Template[] = [
       "Automations integration guide",
       "Analytics dashboard starter",
     ],
+    requiresPayment: true,
+    delivery: {
+      format: "zip",
+      storedAt: "local-folder",
+      downloadPath: "/downloads/modern-consultancy.zip",
+      fileSize: "22.4 MB",
+      contents: [
+        "next-app/ – agency marketing funnel",
+        "integrations/ – Zapier + HubSpot recipes",
+        "docs/brand-positioning.md",
+      ],
+      notes: "Pending purchases remain locked until Stripe marks the payment as successful.",
+    },
   },
   {
     id: "boutique-botanics",
@@ -158,6 +219,19 @@ export const templates: Template[] = [
       "Email automation starter kit",
       "Brand photography moodboard",
     ],
+    requiresPayment: true,
+    delivery: {
+      format: "zip",
+      storedAt: "s3-bucket",
+      downloadPath: "https://cdn.prosite.dev/templates/boutique-botanics.zip",
+      fileSize: "45.8 MB",
+      contents: [
+        "next-app/ – Hydrogen-powered storefront",
+        "scripts/ – deployment helpers",
+        "docs/fulfillment-guide.md",
+      ],
+      notes: "Uploaded directly to the `prosite-templates` S3 bucket after purchase webhook succeeds.",
+    },
   },
 ];
 
