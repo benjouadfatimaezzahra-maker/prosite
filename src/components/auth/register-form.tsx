@@ -9,52 +9,49 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setIsSubmitting(true);
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
-    const name = String(formData.get("name") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
+  const formEl = event.currentTarget; // ✅ capture before await
 
-    if (!name || !email || !password) {
-      setError("Please complete all fields");
-      setIsSubmitting(false);
+  setError(null);
+  setSuccess(null);
+  setIsSubmitting(true);
+
+  const formData = new FormData(formEl);
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  try {
+    const response = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    const data = (await response.json()) as { message?: string };
+
+    if (!response.ok) {
+      setError(data.message ?? "Unable to create your account");
       return;
     }
 
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+    setSuccess(data.message ?? "Account created successfully");
 
-      const data = (await response.json()) as { message?: string };
+    formEl.reset(); // ✅ use captured reference, not event.currentTarget
 
-      if (!response.ok) {
-        setError(data.message ?? "Unable to create your account");
-        return;
-      }
-
-      setSuccess(data.message ?? "Account created successfully");
-      event.currentTarget.reset();
-
-      setTimeout(() => {
-        router.push("/auth/login?registered=1");
-      }, 1200);
-    } catch (err) {
-      console.error("Error creating account", err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setTimeout(() => {
+      router.push("/auth/login?registered=1");
+    }, 1200);
+  } catch (err) {
+    console.error("Error creating account", err);
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setIsSubmitting(false);
   }
+}
+
 
   return (
     <form

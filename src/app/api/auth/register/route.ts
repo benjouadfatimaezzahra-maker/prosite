@@ -33,7 +33,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const hashedPassword = hashPassword(parsed.data.password);
+    // const hashedPassword = hashPassword(parsed.data.password);
+    const hashedPassword = await hashPassword(parsed.data.password);
+
     await User.create({
       name: parsed.data.name,
       email: parsed.data.email,
