@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTemplateById, templates } from "@/lib/templates";
 import { TemplateLivePreview } from "@/components/template-live-preview";
+import { CheckoutButton } from "@/components/checkout-button";
 
 export function generateStaticParams() {
   return templates.map((template) => ({ id: template.id }));
@@ -67,12 +68,7 @@ export default async function TemplateDetailPage({ params, searchParams }: Templ
               </div>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row">
-              <Link
-                href="/checkout"
-                className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-neutral-800"
-              >
-                Buy now
-              </Link>
+              <CheckoutButton templateId={template.id} templateName={template.name} />
               {template.demoUrl && (
                 <Link
                   href={template.demoUrl}
