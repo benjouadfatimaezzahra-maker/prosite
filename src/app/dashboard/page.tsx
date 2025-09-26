@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import { templates } from "@/lib/templates";
+import { authOptions } from "@/lib/auth";
 
 const purchasedTemplateIds = ["dental-studio", "modern-consultancy"];
 
@@ -9,7 +12,13 @@ export const metadata: Metadata = {
   description: "Access your purchased templates, download project files, and grab deployment resources.",
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect(`/auth/login?callbackUrl=/dashboard`);
+  }
+
   const purchasedTemplates = templates.filter((template) =>
     purchasedTemplateIds.includes(template.id),
   );
