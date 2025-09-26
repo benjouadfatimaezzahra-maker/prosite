@@ -66,7 +66,19 @@ export default async function TemplateDetailPage({ params, searchParams }: Templ
                 <p className="text-sm text-neutral-500">Tech stack</p>
                 <p className="text-sm font-medium text-neutral-800">{template.techStack.join(", ")}</p>
               </div>
+              <div>
+                <p className="text-sm text-neutral-500">Delivery</p>
+                <p className="text-sm font-medium text-neutral-800">
+                  {template.delivery.format.toUpperCase()} stored in a
+                  {" "}
+                  {template.delivery.storedAt === "local-folder" ? "versioned asset folder" : "managed S3 bucket"}
+                </p>
+              </div>
             </div>
+            <p className="text-sm text-neutral-500">
+              Downloads unlock automatically after a successful Stripe payment and appear inside your dashboard with a signed
+              link.
+            </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <CheckoutButton templateId={template.id} templateName={template.name} />
               {template.demoUrl && (
@@ -127,6 +139,28 @@ export default async function TemplateDetailPage({ params, searchParams }: Templ
               ))}
             </ul>
           </div>
+        </div>
+
+        <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+          <h2 className="text-xl font-semibold text-neutral-900">Template delivery</h2>
+          <p className="mt-3 text-sm text-neutral-600">
+            Your purchase grants a license to download the production bundle. We ship each template as a
+            {" "}
+            <span className="font-semibold text-neutral-900">{template.delivery.fileSize}</span>
+            {" "}
+            {template.delivery.format.toUpperCase()} archive that includes:
+          </p>
+          <ul className="mt-4 space-y-3 text-sm text-neutral-600">
+            {template.delivery.contents.map((item) => (
+              <li key={item} className="flex items-start gap-3">
+                <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-neutral-900" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-sm text-neutral-500">
+            {template.delivery.notes}
+          </p>
         </div>
       </div>
     </div>
