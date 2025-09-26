@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
   const purchasedTemplates = templates.filter((template) =>
-    purchasedTemplateIds.includes(template.slug),
+    purchasedTemplateIds.includes(template.id),
   );
 
   return (

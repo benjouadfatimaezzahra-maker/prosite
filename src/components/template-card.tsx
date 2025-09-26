@@ -26,12 +26,15 @@ export function TemplateCard({ template }: { template: Template }) {
           </p>
         </div>
         <div className="mt-auto flex items-center justify-between pt-4 text-sm font-medium">
-          <Link href={`/templates/${template.slug}`} className="text-neutral-900 transition hover:text-neutral-600">
+          <Link href={`/templates/${template.id}`} className="text-neutral-900 transition hover:text-neutral-600">
             View details
           </Link>
-          <span className="rounded-full bg-neutral-900 px-4 py-2 text-white transition hover:bg-neutral-800">
+          <Link
+            href={`/templates/${template.id}?preview=true`}
+            className="rounded-full bg-neutral-900 px-4 py-2 text-white transition hover:bg-neutral-800"
+          >
             Preview
-          </span>
+          </Link>
         </div>
       </div>
     </div>

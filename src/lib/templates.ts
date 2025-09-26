@@ -168,6 +168,6 @@ export const categories = [
 
 export type CategoryFilter = (typeof categories)[number];
 
-export function getTemplateBySlug(slug: string) {
-  return templates.find((template) => template.slug === slug);
+export function getTemplateById(id: string) {
+  return templates.find((template) => template.id === id);
 }
