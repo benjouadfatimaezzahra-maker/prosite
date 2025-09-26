@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+// import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
+
 import Stripe from "stripe";
 
 import { authOptions } from "@/lib/auth";
