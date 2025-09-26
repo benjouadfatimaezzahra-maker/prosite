@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
+// import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
+
 import { templates } from "@/lib/templates";
 import { authOptions } from "@/lib/auth";
 
