@@ -2,14 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTemplateBySlug, templates } from "@/lib/templates";
+import { getTemplateById, templates } from "@/lib/templates";
+import { TemplateLivePreview } from "@/components/template-live-preview";
 
 export function generateStaticParams() {
-  return templates.map((template) => ({ slug: template.slug }));
+  return templates.map((template) => ({ id: template.id }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const template = getTemplateBySlug(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const template = getTemplateById(id);
   if (!template) {
     return { title: "Template not found" };
   }
@@ -25,12 +27,21 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function TemplateDetailPage({ params }: { params: { slug: string } }) {
-  const template = getTemplateBySlug(params.slug);
+type TemplateDetailPageProps = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ preview?: string }>;
+};
+
+export default async function TemplateDetailPage({ params, searchParams }: TemplateDetailPageProps) {
+  const { id } = await params;
+  const { preview } = (await searchParams) ?? {};
+  const template = getTemplateById(id);
 
   if (!template) {
     notFound();
   }
+
+  const shouldShowPreview = preview === "true";
 
   return (
     <div className="border-t border-neutral-200 bg-neutral-50">
@@ -60,11 +71,13 @@ export default function TemplateDetailPage({ params }: { params: { slug: string 
                 href="/checkout"
                 className="inline-flex items-center justify-center rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-neutral-800"
               >
-                Buy & download
+                Buy now
               </Link>
               {template.demoUrl && (
                 <Link
                   href={template.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-full border border-neutral-200 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:text-neutral-900"
                 >
                   Live preview
@@ -86,6 +99,14 @@ export default function TemplateDetailPage({ params }: { params: { slug: string 
             ))}
           </div>
         </div>
+
+        {template.demoUrl && (
+          <TemplateLivePreview
+            url={template.demoUrl}
+            name={template.name}
+            defaultOpen={shouldShowPreview}
+          />
+        )}
 
         <div className="grid gap-8 md:grid-cols-2">
           <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
