@@ -11,8 +11,6 @@ if (!MONGODB_URI) {
  * about our cached mongoose connection
  */
 declare global {
-  // `var` because we'll assign on runtime
-  // eslint-disable-next-line no-var
   var mongooseCache:
     | {
         conn: typeof mongoose | null;
