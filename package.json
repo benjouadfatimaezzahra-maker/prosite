@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "archiver": "^7.0.1",
     "@prisma/client": "^6.16.2",
     "@tanstack/react-query": "^5.90.2",
+    "archiver": "^7.0.1",
     "axios": "^1.12.2",
     "fs-extra": "^11.2.0",
     "mongodb": "^6.20.0",
@@ -26,9 +26,10 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@types/archiver": "^6.0.3",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/archiver": "^6.0.3",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
