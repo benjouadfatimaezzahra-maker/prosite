@@ -51,7 +51,7 @@ export default function Home() {
               {heroTemplates.map((template) => (
                 <div key={template.id} className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-neutral-200 bg-white">
                   <Image
-                    src={template.thumbnail}
+                    src={template.previewImage}
                     alt={template.name}
                     fill
                     sizes="(max-width: 640px) 50vw, 33vw"

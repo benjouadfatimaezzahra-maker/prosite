@@ -6,9 +6,10 @@ import { getServerSession } from "next-auth/next";
 import Stripe from "stripe";
 
 import { authOptions } from "@/lib/auth";
-import { getTemplateById } from "@/lib/templates";
+import { getTemplateById, getTemplateDefaultConfig } from "@/lib/templates";
 import { connectDB } from "@/lib/mongodb";
 import { Purchase } from "@/models/purchase";
+import type { SiteConfig } from "@/types/site-config";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => null)) as { templateId?: string } | null;
+  const body = (await request.json().catch(() => null)) as { templateId?: string; userConfig?: Partial<SiteConfig> } | null;
 
   if (!body?.templateId) {
     return NextResponse.json({ error: "Template ID is required." }, { status: 400 });
@@ -61,6 +62,17 @@ export async function POST(request: Request) {
 
   if (!template) {
     return NextResponse.json({ error: "Template not found." }, { status: 404 });
+  }
+
+  const defaultConfig = getTemplateDefaultConfig(template.id);
+  const mergedConfig: SiteConfig = {
+    ...defaultConfig,
+    ...(body.userConfig ?? {}),
+  };
+
+  for (const key of Object.keys(mergedConfig)) {
+    const value = mergedConfig[key];
+    mergedConfig[key] = typeof value === "string" ? value : "";
   }
 
   await connectDB();
@@ -110,10 +122,15 @@ export async function POST(request: Request) {
         templateId: template.id,
         status: "pending",
         purchaseDate: new Date(),
+        stripeSessionId: checkoutSession.id,
         stripePaymentIntentId:
           typeof checkoutSession.payment_intent === "string"
             ? checkoutSession.payment_intent
             : checkoutSession.payment_intent?.id,
+        templateName: template.name,
+        templatePrice: template.price,
+        templatePreviewImage: template.previewImage,
+        userConfig: mergedConfig,
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );
