@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model, type Document } from "mongoose";
+import { Schema, model, models, type Model, type Document, type Types } from "mongoose";
 
 export interface IUser extends Document {
   name: string;
@@ -6,6 +6,7 @@ export interface IUser extends Document {
   password: string;
   createdAt: Date;
   updatedAt: Date;
+  _id: Types.ObjectId;
 }
 
 const UserSchema = new Schema<IUser, Model<IUser>>(

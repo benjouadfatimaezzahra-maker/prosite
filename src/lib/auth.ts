@@ -1,7 +1,9 @@
 import { connectDB } from "@/lib/mongodb";
 import { verifyPassword } from "@/lib/auth-utils";
 import { User } from "@/models/user";
-import type { NextAuthOptions } from "next-auth";
+import type { Session } from "next-auth";
+import type { JWT } from "next-auth/jwt";
+import NextAuth from "next-auth/next";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { z } from "zod";
 
@@ -10,7 +12,21 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-export const authOptions: NextAuthOptions = {
+type Callbacks = NonNullable<AuthOptions["callbacks"]>;
+type JwtCallback = Callbacks["jwt"];
+type SessionCallback = Callbacks["session"];
+
+type ExtractAuthOptions<T> = T extends {
+  (options: infer O): any;
+  (req: any, res: any, options: infer O2): any;
+  (req: any, res: any, options: infer O3): any;
+}
+  ? O & O2 & O3
+  : never;
+
+type AuthOptions = ExtractAuthOptions<typeof NextAuth>;
+
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -18,7 +34,11 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials): Promise<{
+        id: string;
+        email: string;
+        name?: string | null;
+      } | null> {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
@@ -50,15 +70,23 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = (user as { id?: string }).id ?? token.sub;
+    async jwt(...args: Parameters<NonNullable<JwtCallback>>) {
+      const [{ token, user }] = args;
+
+      if (user?.id) {
+        token.sub = user.id;
+      }
+      if (typeof user?.name === "string") {
         token.name = user.name;
+      }
+      if (typeof user?.email === "string") {
         token.email = user.email;
       }
       return token;
     },
-    async session({ session, token }) {
+    async session(...args: Parameters<NonNullable<SessionCallback>>) {
+      const [{ session, token }] = args;
+
       if (session.user) {
         session.user.id = (token.sub as string) ?? "";
         session.user.email = token.email;

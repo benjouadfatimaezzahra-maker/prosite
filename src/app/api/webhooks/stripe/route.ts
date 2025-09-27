@@ -6,19 +6,19 @@ import { connectDB } from "@/lib/mongodb";
 import { Purchase } from "@/models/purchase";
 import { getTemplateById, getTemplateDefaultConfig } from "@/lib/templates";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-if (!stripeSecretKey) {
-  throw new Error("Missing STRIPE_SECRET_KEY environment variable.");
+function getRequiredEnv(name: "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET"): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing ${name} environment variable.`);
+  }
+  return value;
 }
 
-if (!webhookSecret) {
-  throw new Error("Missing STRIPE_WEBHOOK_SECRET environment variable.");
-}
+const stripeSecretKey = getRequiredEnv("STRIPE_SECRET_KEY");
+const webhookSecret = getRequiredEnv("STRIPE_WEBHOOK_SECRET");
 
 const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2024-11-20",
+  apiVersion: "2025-08-27.basil",
 });
 
 export const runtime = "nodejs";
@@ -51,23 +51,27 @@ export async function POST(request: Request) {
           break;
         }
 
+        const resolvedTemplateId = templateId;
+        const resolvedUserId = userId;
+
         await connectDB();
         const existingPurchase = await Purchase.findOne({ stripeSessionId: session.id }).exec();
-        const template = getTemplateById(templateId);
-        const userConfig = existingPurchase?.userConfig ?? getTemplateDefaultConfig(templateId);
+        const template = getTemplateById(resolvedTemplateId);
+        const userConfig =
+          existingPurchase?.userConfig ?? getTemplateDefaultConfig(resolvedTemplateId);
 
         try {
           const exportResult = await exportAndZipSite(
-            templateId,
+            resolvedTemplateId,
             userConfig,
-            userId,
+            resolvedUserId,
             existingPurchase?.downloadToken,
           );
           await Purchase.findOneAndUpdate(
             { stripeSessionId: session.id },
             {
-              userId,
-              templateId,
+              userId: resolvedUserId,
+              templateId: resolvedTemplateId,
               status: "completed",
               purchaseDate: new Date(),
               stripeSessionId: session.id,
@@ -79,7 +83,8 @@ export async function POST(request: Request) {
               zipPath: exportResult.zipPath,
               downloadToken: exportResult.downloadToken,
               lastGeneratedAt: new Date(),
-              templateName: template?.name ?? existingPurchase?.templateName ?? templateId,
+              templateName:
+                template?.name ?? existingPurchase?.templateName ?? resolvedTemplateId,
               templatePrice: template?.price ?? existingPurchase?.templatePrice ?? 0,
               templatePreviewImage: template?.previewImage ?? existingPurchase?.templatePreviewImage,
               userConfig,
@@ -90,8 +95,8 @@ export async function POST(request: Request) {
           await Purchase.findOneAndUpdate(
             { stripeSessionId: session.id },
             {
-              userId,
-              templateId,
+              userId: resolvedUserId,
+              templateId: resolvedTemplateId,
               status: "failed",
               purchaseDate: new Date(),
               stripeSessionId: session.id,
