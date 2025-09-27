@@ -9,6 +9,7 @@ const PRIMARY_COLOR = "{{primaryColor}}";
 export const metadata: Metadata = {
   title: SITE_NAME,
   description: TAGLINE,
+
 };
 
 export default function RootLayout({
@@ -22,6 +23,7 @@ export default function RootLayout({
         className="min-h-screen text-white"
         style={{ backgroundColor: PRIMARY_COLOR }}
       >
+
         {children}
       </body>
     </html>

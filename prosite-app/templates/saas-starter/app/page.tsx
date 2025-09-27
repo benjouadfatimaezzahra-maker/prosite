@@ -11,6 +11,7 @@ export default function Page() {
         <Image
           src={LOGO_URL}
           alt={`${SITE_NAME} logo`}
+
           width={96}
           height={96}
           className="h-24 w-24 rounded-full bg-white/10 object-contain"
@@ -19,6 +20,7 @@ export default function Page() {
           {SITE_NAME}
         </h1>
         <p className="max-w-2xl text-lg text-white/80">{TAGLINE}</p>
+
       </header>
 
       <section className="grid gap-10 rounded-3xl bg-white/5 p-10 text-left text-white shadow-xl backdrop-blur">
@@ -32,6 +34,7 @@ export default function Page() {
         </div>
         <div>
           <h3 className="text-xl font-semibold">Why founders love {SITE_NAME}</h3>
+
           <ul className="mt-4 space-y-3 text-white/80">
             <li>✅ Conversion-first hero section</li>
             <li>✅ Pricing table with highlight cards</li>
@@ -44,6 +47,7 @@ export default function Page() {
       <footer className="flex flex-col items-center justify-between gap-4 rounded-3xl bg-white/5 p-6 text-sm text-white/70 sm:flex-row">
         <span>Built for modern SaaS teams.</span>
         <span>© {new Date().getFullYear()} {SITE_NAME}.</span>
+
       </footer>
     </main>
   );
