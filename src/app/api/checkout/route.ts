@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
 // import { getServerSession } from "next-auth";
@@ -93,12 +95,15 @@ export async function POST(request: Request) {
   }
 
   try {
+    const configId = crypto.randomUUID();
+
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: user.email,
       metadata: {
         userId: user.id,
         templateId: template.id,
+        configId,
       },
       success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/templates/${template.id}?checkout=cancelled`,
@@ -122,6 +127,7 @@ export async function POST(request: Request) {
       {
         userId: user.id,
         templateId: template.id,
+        configId,
         status: "pending",
         purchaseDate: new Date(),
         stripeSessionId: checkoutSession.id,

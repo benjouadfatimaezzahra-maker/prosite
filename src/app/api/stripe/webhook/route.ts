@@ -3,8 +3,8 @@ import Stripe from "stripe";
 
 import { exportAndZipSite } from "@/lib/exportSite";
 import { connectDB } from "@/lib/mongodb";
-import { Purchase } from "@/models/purchase";
 import { getTemplateById, getTemplateDefaultConfig } from "@/lib/templates";
+import { Purchase } from "@/models/purchase";
 
 function getRequiredEnv(name: "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET"): string {
   const value = process.env[name];
@@ -30,11 +30,11 @@ export async function POST(request: Request) {
     return new NextResponse("Missing Stripe signature header.", { status: 400 });
   }
 
-  const body = await request.arrayBuffer();
+  const rawBody = await request.arrayBuffer();
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(Buffer.from(body), signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(Buffer.from(rawBody), signature, webhookSecret);
   } catch (error) {
     console.error("Stripe webhook signature verification failed", error);
     return new NextResponse("Webhook signature verification failed.", { status: 400 });
@@ -45,33 +45,37 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const templateId = session.metadata?.templateId;
+        const configId = session.metadata?.configId;
         const userId = session.metadata?.userId;
 
         if (!templateId || !userId) {
+          console.warn("Stripe checkout session missing metadata", {
+            templateId,
+            configId,
+            userId,
+            sessionId: session.id,
+          });
           break;
         }
 
-        const resolvedTemplateId = templateId;
-        const resolvedUserId = userId;
-
         await connectDB();
-        const existingPurchase = await Purchase.findOne({ stripeSessionId: session.id }).exec();
-        const template = getTemplateById(resolvedTemplateId);
-        const userConfig =
-          existingPurchase?.userConfig ?? getTemplateDefaultConfig(resolvedTemplateId);
+
+        const existingPurchase = await Purchase.findOne({
+          stripeSessionId: session.id,
+        }).exec();
+
+        const template = getTemplateById(templateId);
+        const userConfig = existingPurchase?.userConfig ?? getTemplateDefaultConfig(templateId);
 
         try {
-          const exportResult = await exportAndZipSite(
-            resolvedTemplateId,
-            userConfig,
-            resolvedUserId,
-            existingPurchase?.downloadToken,
-          );
+          const exportResult = await exportAndZipSite(templateId, userConfig, userId);
+
           await Purchase.findOneAndUpdate(
             { stripeSessionId: session.id },
             {
-              userId: resolvedUserId,
-              templateId: resolvedTemplateId,
+              userId,
+              templateId,
+              configId,
               status: "completed",
               purchaseDate: new Date(),
               stripeSessionId: session.id,
@@ -81,10 +85,8 @@ export async function POST(request: Request) {
                   : session.payment_intent?.id,
               exportPath: exportResult.exportPath,
               zipPath: exportResult.zipPath,
-              downloadToken: exportResult.downloadToken,
               lastGeneratedAt: new Date(),
-              templateName:
-                template?.name ?? existingPurchase?.templateName ?? resolvedTemplateId,
+              templateName: template?.name ?? existingPurchase?.templateName ?? templateId,
               templatePrice: template?.price ?? existingPurchase?.templatePrice ?? 0,
               templatePreviewImage: template?.previewImage ?? existingPurchase?.templatePreviewImage,
               userConfig,
@@ -95,8 +97,9 @@ export async function POST(request: Request) {
           await Purchase.findOneAndUpdate(
             { stripeSessionId: session.id },
             {
-              userId: resolvedUserId,
-              templateId: resolvedTemplateId,
+              userId,
+              templateId,
+              configId,
               status: "failed",
               purchaseDate: new Date(),
               stripeSessionId: session.id,
@@ -107,13 +110,16 @@ export async function POST(request: Request) {
             },
             { upsert: true, new: true, setDefaultsOnInsert: true },
           ).exec();
+
           throw generationError;
         }
+
         break;
       }
       case "checkout.session.async_payment_failed":
       case "checkout.session.expired": {
         const session = event.data.object as Stripe.Checkout.Session;
+
         await connectDB();
         await Purchase.findOneAndUpdate(
           { stripeSessionId: session.id },
@@ -127,10 +133,10 @@ export async function POST(request: Request) {
                 : session.payment_intent?.id,
           },
         ).exec();
+
         break;
       }
       default: {
-        // Unsupported event type; acknowledge without action
         break;
       }
     }

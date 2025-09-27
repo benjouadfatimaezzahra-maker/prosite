@@ -82,7 +82,7 @@ export default async function DashboardPage() {
       previewImage: doc.templatePreviewImage ?? template?.previewImage,
       status: doc.status,
       purchaseDate: doc.purchaseDate ? doc.purchaseDate.toISOString() : undefined,
-      downloadUrl: doc.downloadToken ? `/api/download/${doc.downloadToken}` : undefined,
+      downloadUrl: doc.zipPath ? `/api/download/${doc._id.toString()}` : undefined,
       exportPath: doc.exportPath ?? undefined,
       zipPath: doc.zipPath ?? undefined,
       lastGeneratedAt: doc.lastGeneratedAt ?? null,
