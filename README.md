@@ -35,3 +35,7 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 - Replace mock checkout screen with a live Stripe integration.
 - Store template assets (ZIPs, imagery) in persistent storage such as S3.
 - Add lightweight customization workflows for colors, copy, and branding assets.
+
+
+
+## new branch to store templates
