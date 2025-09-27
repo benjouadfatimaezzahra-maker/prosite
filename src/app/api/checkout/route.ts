@@ -52,7 +52,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => null)) as { templateId?: string; userConfig?: Partial<SiteConfig> } | null;
+  const body = (await request.json().catch(() => null)) as {
+    templateId?: string;
+    userConfig?: Partial<SiteConfig>;
+  } | null;
 
   if (!body?.templateId) {
     return NextResponse.json({ error: "Template ID is required." }, { status: 400 });
@@ -65,15 +68,14 @@ export async function POST(request: Request) {
   }
 
   const defaultConfig = getTemplateDefaultConfig(template.id);
+  const sanitizedUserConfig = Object.fromEntries(
+    Object.entries(body.userConfig ?? {}).map(([key, value]) => [key, typeof value === "string" ? value : ""]),
+  ) as Record<string, string>;
+
   const mergedConfig: SiteConfig = {
     ...defaultConfig,
-    ...(body.userConfig ?? {}),
+    ...sanitizedUserConfig,
   };
-
-  for (const key of Object.keys(mergedConfig)) {
-    const value = mergedConfig[key];
-    mergedConfig[key] = typeof value === "string" ? value : "";
-  }
 
   await connectDB();
 

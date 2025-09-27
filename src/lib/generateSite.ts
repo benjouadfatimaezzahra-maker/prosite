@@ -1,4 +1,5 @@
 import path from "path";
+import type { Dirent } from "fs";
 import fs from "fs-extra";
 
 import type { SiteConfig } from "@/types/site-config";
@@ -83,7 +84,7 @@ async function replacePlaceholders(directory: string, replacements: Record<strin
   const entries = await fs.readdir(directory, { withFileTypes: true });
 
   await Promise.all(
-    entries.map(async (entry) => {
+    entries.map(async (entry: Dirent) => {
       const entryPath = path.join(directory, entry.name);
 
       if (entry.isDirectory()) {

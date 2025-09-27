@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 import { isValidObjectId } from "mongoose";
 
 import { exportAndZipSite } from "@/lib/exportSite";
@@ -10,11 +11,19 @@ import { Purchase } from "@/models/purchase";
 
 export const runtime = "nodejs";
 
+type AuthenticatedSession = Session & {
+  user: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+  };
+};
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const session = await getServerSession(authOptions);
+  const session = (await getServerSession(authOptions)) as AuthenticatedSession | null;
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

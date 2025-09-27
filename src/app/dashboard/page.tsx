@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
+import type { Session } from "next-auth";
 
 import { ReexportButton } from "@/components/reexport-button";
 import { authOptions } from "@/lib/auth";
@@ -53,7 +54,13 @@ function buildStatusLabel(status: PurchaseStatus, zipPath?: string | null) {
 }
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = (await getServerSession(authOptions)) as (Session & {
+    user: {
+      id: string;
+      email?: string | null;
+      name?: string | null;
+    };
+  }) | null;
 
   if (!session?.user?.id) {
     redirect(`/auth/login?callbackUrl=/dashboard`);
