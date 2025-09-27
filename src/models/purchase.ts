@@ -14,6 +14,7 @@ export interface IPurchase extends Document {
   exportPath?: string;
   zipPath?: string;
   downloadToken?: string;
+  configId?: string;
   templateName: string;
   templatePrice: number;
   templatePreviewImage?: string;
@@ -32,6 +33,7 @@ const PurchaseSchema = new Schema<IPurchase, Model<IPurchase>>(
     exportPath: { type: String },
     zipPath: { type: String },
     downloadToken: { type: String, index: true },
+    configId: { type: String, index: true },
     templateName: { type: String, required: true },
     templatePrice: { type: Number, required: true },
     templatePreviewImage: { type: String },

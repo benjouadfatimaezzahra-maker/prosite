@@ -5,6 +5,7 @@ import fs from "fs-extra";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import type { Session } from "next-auth";
+import { isValidObjectId } from "mongoose";
 
 import { authOptions } from "@/lib/auth";
 import { connectDB } from "@/lib/mongodb";
@@ -22,25 +23,28 @@ type AuthenticatedSession = Session & {
 
 export async function GET(
   request: Request,
-  { params }: { params: { token: string } },
+  { params }: { params: { purchaseId: string } },
 ) {
-  const { token } = params;
   const session = (await getServerSession(authOptions)) as AuthenticatedSession | null;
 
   if (!session?.user?.id) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
+  if (!isValidObjectId(params.purchaseId)) {
+    return new NextResponse("Invalid purchase id", { status: 400 });
+  }
+
   await connectDB();
 
-  const purchase = await Purchase.findOne({
-    userId: session.user.id,
-    downloadToken: token,
-    status: "completed",
-  }).exec();
+  const purchase = await Purchase.findById(params.purchaseId).exec();
 
-  if (!purchase?.zipPath) {
-    return new NextResponse("File not found", { status: 404 });
+  if (!purchase || purchase.userId !== session.user.id || purchase.status !== "completed") {
+    return new NextResponse("Purchase not found", { status: 404 });
+  }
+
+  if (!purchase.zipPath) {
+    return new NextResponse("File not ready", { status: 404 });
   }
 
   const absoluteZipPath = path.isAbsolute(purchase.zipPath)
