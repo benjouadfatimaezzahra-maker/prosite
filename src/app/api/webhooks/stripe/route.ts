@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+import { exportAndZipSite } from "@/lib/exportSite";
 import { connectDB } from "@/lib/mongodb";
 import { Purchase } from "@/models/purchase";
+import { getTemplateById, getTemplateDefaultConfig } from "@/lib/templates";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -50,21 +52,58 @@ export async function POST(request: Request) {
         }
 
         await connectDB();
+        const existingPurchase = await Purchase.findOne({ stripeSessionId: session.id }).exec();
+        const template = getTemplateById(templateId);
+        const userConfig = existingPurchase?.userConfig ?? getTemplateDefaultConfig(templateId);
 
-        await Purchase.findOneAndUpdate(
-          { stripeSessionId: session.id },
-          {
-            userId,
+        try {
+          const exportResult = await exportAndZipSite(
             templateId,
-            status: "completed",
-            purchaseDate: new Date(),
-            stripePaymentIntentId:
-              typeof session.payment_intent === "string"
-                ? session.payment_intent
-                : session.payment_intent?.id,
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true },
-        );
+            userConfig,
+            userId,
+            existingPurchase?.downloadToken,
+          );
+          await Purchase.findOneAndUpdate(
+            { stripeSessionId: session.id },
+            {
+              userId,
+              templateId,
+              status: "completed",
+              purchaseDate: new Date(),
+              stripeSessionId: session.id,
+              stripePaymentIntentId:
+                typeof session.payment_intent === "string"
+                  ? session.payment_intent
+                  : session.payment_intent?.id,
+              exportPath: exportResult.exportPath,
+              zipPath: exportResult.zipPath,
+              downloadToken: exportResult.downloadToken,
+              lastGeneratedAt: new Date(),
+              templateName: template?.name ?? existingPurchase?.templateName ?? templateId,
+              templatePrice: template?.price ?? existingPurchase?.templatePrice ?? 0,
+              templatePreviewImage: template?.previewImage ?? existingPurchase?.templatePreviewImage,
+              userConfig,
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+          ).exec();
+        } catch (generationError) {
+          await Purchase.findOneAndUpdate(
+            { stripeSessionId: session.id },
+            {
+              userId,
+              templateId,
+              status: "failed",
+              purchaseDate: new Date(),
+              stripeSessionId: session.id,
+              stripePaymentIntentId:
+                typeof session.payment_intent === "string"
+                  ? session.payment_intent
+                  : session.payment_intent?.id,
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+          ).exec();
+          throw generationError;
+        }
         break;
       }
       case "checkout.session.async_payment_failed":
@@ -73,7 +112,15 @@ export async function POST(request: Request) {
         await connectDB();
         await Purchase.findOneAndUpdate(
           { stripeSessionId: session.id },
-          { status: "failed", purchaseDate: new Date() },
+          {
+            status: "failed",
+            purchaseDate: new Date(),
+            stripeSessionId: session.id,
+            stripePaymentIntentId:
+              typeof session.payment_intent === "string"
+                ? session.payment_intent
+                : session.payment_intent?.id,
+          },
         ).exec();
         break;
       }

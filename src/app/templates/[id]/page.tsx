@@ -2,16 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTemplateById, templates } from "@/lib/templates";
-import { TemplateLivePreview } from "@/components/template-live-preview";
+
 import { CheckoutButton } from "@/components/checkout-button";
+import { getTemplateById, getTemplateDefaultConfig, templates } from "@/lib/templates";
 
 export function generateStaticParams() {
   return templates.map((template) => ({ id: template.id }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const { id } = params;
   const template = getTemplateById(id);
   if (!template) {
     return { title: "Template not found" };
@@ -23,144 +23,108 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     openGraph: {
       title: template.name,
       description: template.description,
-      images: template.previewImages,
+      images: [template.previewImage],
     },
   };
 }
 
 type TemplateDetailPageProps = {
-  params: Promise<{ id: string }>;
-  searchParams?: Promise<{ preview?: string }>;
+  params: { id: string };
 };
 
-export default async function TemplateDetailPage({ params, searchParams }: TemplateDetailPageProps) {
-  const { id } = await params;
-  const { preview } = (await searchParams) ?? {};
+export default async function TemplateDetailPage({ params }: TemplateDetailPageProps) {
+  const { id } = params;
   const template = getTemplateById(id);
 
   if (!template) {
     notFound();
   }
 
-  const shouldShowPreview = preview === "true";
+  const defaultConfig = getTemplateDefaultConfig(template.id);
 
   return (
     <div className="border-t border-neutral-200 bg-neutral-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16">
-        <div className="flex flex-col gap-8 md:flex-row md:items-start">
+        <div className="flex flex-col gap-10 md:flex-row md:items-start">
           <div className="flex-1 space-y-6">
             <Link href="/templates" className="text-sm font-medium text-neutral-500 hover:text-neutral-900">
               ← Back to gallery
             </Link>
-            <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-neutral-500">
-              {template.category}
-            </span>
             <h1 className="text-4xl font-semibold text-neutral-900">{template.name}</h1>
             <p className="max-w-2xl text-base text-neutral-600">{template.description}</p>
-            <div className="flex flex-wrap gap-6">
+            <div className="flex flex-wrap gap-6 text-sm">
               <div>
-                <p className="text-sm text-neutral-500">Price</p>
+                <p className="text-neutral-500">Price</p>
                 <p className="text-2xl font-semibold text-neutral-900">${template.price}</p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500">Tech stack</p>
-                <p className="text-sm font-medium text-neutral-800">{template.techStack.join(", ")}</p>
+                <p className="text-neutral-500">Export</p>
+                <p className="font-medium text-neutral-800">Next.js 14 project with brand placeholders</p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500">Delivery</p>
-                <p className="text-sm font-medium text-neutral-800">
-                  {template.delivery.format.toUpperCase()} stored in a
-                  {" "}
-                  {template.delivery.storedAt === "local-folder" ? "versioned asset folder" : "managed S3 bucket"}
-                </p>
+                <p className="text-neutral-500">Delivery</p>
+                <p className="font-medium text-neutral-800">Automated ZIP after Stripe checkout</p>
               </div>
             </div>
             <p className="text-sm text-neutral-500">
-              Downloads unlock automatically after a successful Stripe payment and appear inside your dashboard with a signed
-              link.
+              We generate a tailored project using your brand settings, zip it, and drop the download link inside your dashboard
+              seconds after checkout.
             </p>
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <CheckoutButton templateId={template.id} templateName={template.name} />
-              {template.demoUrl && (
-                <Link
-                  href={template.demoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full border border-neutral-200 px-6 py-3 text-sm font-semibold text-neutral-700 transition hover:border-neutral-300 hover:text-neutral-900"
-                >
-                  Live preview
-                </Link>
-              )}
-            </div>
+            <CheckoutButton
+              templateId={template.id}
+              templateName={template.name}
+              defaultConfig={defaultConfig}
+            />
           </div>
           <div className="flex-1 space-y-4">
-            {template.previewImages.map((image, index) => (
-              <div key={image} className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-                <Image
-                  src={image}
-                  alt={`${template.name} preview ${index + 1}`}
-                  width={1200}
-                  height={800}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ))}
+            <div className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
+              <Image
+                src={template.previewImage}
+                alt={`${template.name} preview`}
+                width={1200}
+                height={800}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-neutral-900">Default brand settings</h2>
+              <dl className="mt-4 grid gap-3 text-sm text-neutral-600">
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-neutral-500">Site name</dt>
+                  <dd className="font-semibold text-neutral-900">{defaultConfig.siteName}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-neutral-500">Primary color</dt>
+                  <dd className="font-semibold text-neutral-900">{defaultConfig.primaryColor}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-neutral-500">Tagline</dt>
+                  <dd className="text-right text-neutral-700">{defaultConfig.tagline}</dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-neutral-500">Logo URL</dt>
+                  <dd className="text-right text-neutral-700">{defaultConfig.logoUrl}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </div>
-
-        {template.demoUrl && (
-          <TemplateLivePreview
-            url={template.demoUrl}
-            name={template.name}
-            defaultOpen={shouldShowPreview}
-          />
-        )}
 
         <div className="grid gap-8 md:grid-cols-2">
           <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
-            <h2 className="text-xl font-semibold text-neutral-900">What’s included</h2>
-            <ul className="mt-4 space-y-3 text-sm text-neutral-600">
-              {template.deliverables.map((deliverable) => (
-                <li key={deliverable} className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-neutral-900" aria-hidden />
-                  <span>{deliverable}</span>
-                </li>
-              ))}
-            </ul>
+            <h2 className="text-xl font-semibold text-neutral-900">How delivery works</h2>
+            <ol className="mt-4 space-y-3 text-sm text-neutral-600">
+              <li>1. Complete the Stripe checkout flow.</li>
+              <li>2. Our generator copies the template, injects your branding, and creates a ZIP.</li>
+              <li>3. Access the download link from the dashboard anytime.</li>
+            </ol>
           </div>
           <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
-            <h2 className="text-xl font-semibold text-neutral-900">Key features</h2>
-            <ul className="mt-4 space-y-3 text-sm text-neutral-600">
-              {template.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-neutral-900" aria-hidden />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
+            <h2 className="text-xl font-semibold text-neutral-900">Need custom settings?</h2>
+            <p className="mt-3 text-sm text-neutral-600">
+              Update the brand settings during checkout or re-export the project from your dashboard with fresh details.
+            </p>
           </div>
-        </div>
-
-        <div className="rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h2 className="text-xl font-semibold text-neutral-900">Template delivery</h2>
-          <p className="mt-3 text-sm text-neutral-600">
-            Your purchase grants a license to download the production bundle. We ship each template as a
-            {" "}
-            <span className="font-semibold text-neutral-900">{template.delivery.fileSize}</span>
-            {" "}
-            {template.delivery.format.toUpperCase()} archive that includes:
-          </p>
-          <ul className="mt-4 space-y-3 text-sm text-neutral-600">
-            {template.delivery.contents.map((item) => (
-              <li key={item} className="flex items-start gap-3">
-                <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-neutral-900" aria-hidden />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-neutral-500">
-            {template.delivery.notes}
-          </p>
         </div>
       </div>
     </div>

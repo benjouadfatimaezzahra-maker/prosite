@@ -14,8 +14,8 @@ export default function TemplatesPage() {
       <div className="space-y-4 text-center md:text-left">
         <h1 className="text-4xl font-semibold text-neutral-900">Template gallery</h1>
         <p className="text-base text-neutral-600">
-          Filter by category to find a site that fits your next launch. Every purchase unlocks a signed download link to a
-          production-ready Next.js project bundled as a ZIP and stored in our delivery folder or S3 bucket.
+          Browse production-ready Next.js templates and pick the one that fits your next launch. Every purchase triggers an
+          automated export with your brand settings and a signed download link inside the dashboard.
         </p>
       </div>
       <TemplateGallery templates={templates} />

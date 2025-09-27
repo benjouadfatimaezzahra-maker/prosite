@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 
+import type { SiteConfig } from "@/types/site-config";
+
 type CheckoutButtonProps = {
   templateId: string;
   templateName: string;
   className?: string;
+  defaultConfig?: SiteConfig;
 };
 
-export function CheckoutButton({ templateId, templateName, className }: CheckoutButtonProps) {
+export function CheckoutButton({ templateId, templateName, className, defaultConfig }: CheckoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -19,7 +22,7 @@ export function CheckoutButton({ templateId, templateName, className }: Checkout
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ templateId }),
+        body: JSON.stringify({ templateId, userConfig: defaultConfig }),
       });
 
       if (response.status === 401) {
